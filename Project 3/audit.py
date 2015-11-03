@@ -19,20 +19,40 @@ street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 
 
 expected = ["Street", "Avenue", "Boulevard", "Drive", "Court", "Place", "Square", "Lane", "Road", 
-            "Trail", "Parkway", "Commons"]
+            "Trail", "Parkway", "Commons",'Southwest','Southeast','Northwest','Northeast',"Way","Circle"]
 
 # UPDATE THIS VARIABLE
 mapping = { "St": "Street",
             "St.": "Street",
             "Ave" : 'Avenue',
-            "Rd." : 'Road'}
-
+            "Rd." : 'Road',
+            "Rd" : 'Road',
+            "Ln" : "Lane",
+            "Trl" : 'Trail',
+            "Xing" : 'Crossing',
+            "Sq" : "Square",
+            "Cir" : "Circle",
+            "Pt" : "Point",
+            "Pl" : "Place",
+            "Ct" : "Court",
+            "Blvd": "Boulevard",
+            "Lndg" : "Landing",
+            "Ave." : "Avenue",
+            "Hwy" : "Highway"}
+direction_mapping = { "S": "South",
+            "W": "West",
+            "E" : 'East',
+            "N" : 'North',
+            "NE" : "Northeast",
+            "NW" : "Northwest",
+            "SE" : "Southeast",
+            "SW" : "Southwest"}
 
 def audit_street_type(street_types, street_name):
     m = street_type_re.search(street_name)
     if m:
         street_type = m.group()
-        if street_type not in expected:
+        if street_type not in expected and street_type not in direction_mapping.keys() and street_type not in mapping.keys():
             street_types[street_type].add(street_name)
 
 def audit_key_values(key_vals,key_val):
@@ -90,10 +110,10 @@ def update_name(name, mapping):
 def test():
     st_types,post_codes,key_vals,counties = audit(OSMFILE)
     #assert len(st_types) == 3
-    #pprint.pprint(dict(st_types).keys())
+    pprint.pprint(dict(st_types).keys())
     #pprint.pprint(dict(st_types))
-    pprint.pprint(post_codes)
-    pprint.pprint(counties)
+    #pprint.pprint(post_codes)
+    #pprint.pprint(counties)
     #pprint.pprint(key_vals)
 
     
