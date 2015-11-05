@@ -11,11 +11,14 @@ Your task in this exercise has two steps:
 """
 import xml.etree.cElementTree as ET
 from collections import defaultdict
+from bs4 import BeautifulSoup
 import re
 import pprint
 
+html_file = 'ZipCodes.html'
 OSMFILE = "sample.osm"
 street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
+has_numbers_in_type = re.compile(r'[0-9]+')
 
 
 expected = ["Street", "Avenue", "Boulevard", "Drive", "Court", "Place", "Square", "Lane", "Road", 
@@ -48,12 +51,25 @@ direction_mapping = { "S": "South",
             "SE" : "Southeast",
             "SW" : "Southwest"}
 
+def extract_zip_codes(page):
+    data = []
+    with open(page, 'r') as html:
+        soup = BeautifulSoup(html)
+        #print soup.head
+        tables = soup.find_all(href=re.compile(r'http://www.zipcodestogo.com/Atlanta/GA/*'))
+        #print tables
+        for table in tables:
+            data.append(table.text)
+
+    return data
 def audit_street_type(street_types, street_name):
     m = street_type_re.search(street_name)
     if m:
         street_type = m.group()
         if street_type not in expected and street_type not in direction_mapping.keys() and street_type not in mapping.keys():
-            street_types[street_type].add(street_name)
+            found = has_numbers_in_type.search(street_type)
+            if found:
+                street_types[street_type].add(street_name)
 
 def audit_key_values(key_vals,key_val):
         key_vals.add(key_val)
@@ -108,9 +124,13 @@ def update_name(name, mapping):
 
 
 def test():
+    zc = extract_zip_codes(html_file)
     st_types,post_codes,key_vals,counties = audit(OSMFILE)
+    for zipcode in post_codes:
+        if zipcode not in zc:
+            print zipcode
     #assert len(st_types) == 3
-    pprint.pprint(dict(st_types).keys())
+    #pprint.pprint(dict(st_types).keys())
     #pprint.pprint(dict(st_types))
     #pprint.pprint(post_codes)
     #pprint.pprint(counties)
