@@ -19,6 +19,9 @@ html_file = 'ZipCodes.html'
 OSMFILE = "sample.osm"
 street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 has_numbers_in_type = re.compile(r'[0-9]+')
+zipcode_search = re.compile(r'^([0-9]+)-([0-9]+)')
+prefix_zip = re.compile(r'^[GA\s]+([0-9]+)')
+
 
 
 expected = ["Street", "Avenue", "Boulevard", "Drive", "Court", "Place", "Square", "Lane", "Road", 
@@ -76,7 +79,7 @@ def audit_key_values(key_vals,key_val):
 def audit_postcodes(post_codes,postcode):
     post_codes.add(postcode)
 def audit_counties(counties,county):
-    counties.add(county)        
+    counties[county] += 1        
 def audit_tag_attribs(tag_names,tags):
     #this function is to check whether the 'k' and 'v' are the only attributes of the tags
     for tag_name in tags:
@@ -95,7 +98,7 @@ def audit(osmfile):
     #tag_attribs = set()
     key_vals = set()
     post_codes = set()
-    counties = set()
+    counties = defaultdict(int)
     for event, elem in ET.iterparse(osm_file, events=("start",)):
         if elem.tag == "node" or elem.tag == "way":
             for tag in elem.iter("tag"):
@@ -104,7 +107,16 @@ def audit(osmfile):
                 if is_street_name(tag):
                     audit_street_type(street_types, tag.attrib['v'])
                 elif is_postcode(tag):
-                    audit_postcodes(post_codes, tag.attrib['v'])
+                    m = zipcode_search.search(tag.attrib['v'])
+                    m_ = prefix_zip.search(tag.attrib['v'])
+                    if m:
+                        zip = m.group(1)
+                        audit_postcodes(post_codes, zip)
+                    elif m_:
+                        zip = m_.group(1)
+                        audit_postcodes(post_codes, zip)
+                    else:
+                        audit_postcodes(post_codes, tag.attrib['v'])
                 elif is_county(tag):
                     audit_counties(counties, tag.attrib['v'])
     return street_types,post_codes,key_vals,counties
@@ -126,14 +138,14 @@ def update_name(name, mapping):
 def test():
     zc = extract_zip_codes(html_file)
     st_types,post_codes,key_vals,counties = audit(OSMFILE)
-    for zipcode in post_codes:
-        if zipcode not in zc:
-            print zipcode
+    #for zipcode in post_codes:
+     #   if zipcode not in zc:
+      #      print zipcode
     #assert len(st_types) == 3
     #pprint.pprint(dict(st_types).keys())
     #pprint.pprint(dict(st_types))
     #pprint.pprint(post_codes)
-    #pprint.pprint(counties)
+    pprint.pprint(counties)
     #pprint.pprint(key_vals)
 
     
