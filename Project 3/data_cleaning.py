@@ -184,13 +184,17 @@ def gen_node_refs_array(element):
         ref = tag.attrib['ref']
         l.append(ref)
     return l        
+#@profile
 def clean_file(osmfile):
     osm_file = open(osmfile, 'r')
     #data = []
-    for  event,elem in ET.iterparse(osm_file, events=("start",)):
+    context = ET.iterparse(osm_file, events=("start",))
+    context = iter(context)
+    event,root = context.next()
+    for  event,elem in context:
         if elem.tag == "node" or elem.tag == "way":
             d = {}
-            #d['created'] = gen_created_dict(elem)
+            d['created'] = gen_created_dict(elem)
             
             if is_pos_present(elem):
                 d['pos'] = gen_pos_array(elem)
@@ -202,6 +206,8 @@ def clean_file(osmfile):
                 d['node_refs'] = gen_node_refs_array(elem)
             #pprint.pprint(d)
             #data.append(d)
+            root.clear()
+            
             
     #return data
 def insert_data(data):
