@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm>
+	<node changeset="1433904" id="416154922" lat="34.219617" lon="-84.542002" timestamp="2009-06-06T01:14:47Z" uid="82286" user="Liber" version="1">
+		<tag k="addr:state" v="Georgia" />
+		<tag k="addr:county" v="Cherokee, GA" />
+		<tag k="addr:street" v="Fieldstone Dr" />
+		<tag k="addr:country" v="US" />
+		<tag k="addr:postcode" v="30114" />
+		<tag k="addr:housenumber" v="1049" />
+	</node>
+	<node changeset="17591597" id="2439291159" lat="33.6482803" lon="-84.0220964" timestamp="2013-08-30T15:55:52Z" uid="1728935" user="bopchap3" version="1">
+		<tag k="name" v="Rockdale Career Academy" />
+		<tag k="amenity" v="school" />
+		<tag k="addr:street" v="Culpepper Dr SW" />
+		<tag k="addr:postcode" v="30094" />
+		<tag k="addr:housenumber" v="1064" />
+	</node>
+	<node changeset="22837419" id="2907967651" lat="34.0640822" lon="-84.7264589" timestamp="2014-06-09T19:49:44Z" uid="1994082" user="Fred O" version="1">
+		<tag k="name" v="Publix" />
+		<tag k="shop" v="supermarket" />
+		<tag k="addr:city" v="Acworth" />
+		<tag k="addr:street" v="Cedarcrest Road NW" />
+		<tag k="addr:postcode" v="30101" />
+		<tag k="addr:housenumber" v="6110" />
+	</node>
+	<way changeset="14477992" id="6252614" timestamp="2012-12-31T14:20:16Z" uid="451693" user="bot-mode" version="2">
+		<nd ref="52374441" />
+		<nd ref="52374442" />
+		<nd ref="52374444" />
+		<nd ref="52374446" />
+		<nd ref="52374448" />
+		<nd ref="52374450" />
+		<nd ref="52374452" />
+		<tag k="name" v="South 6th Street" />
+		<tag k="highway" v="residential" />
+		<tag k="tiger:cfcc" v="A41" />
+		<tag k="tiger:county" v="Chambers, AL" />
+		<tag k="tiger:reviewed" v="no" />
+		<tag k="tiger:name_base" v="6th" />
+		<tag k="tiger:name_type" v="St" />
+		<tag k="tiger:name_direction_prefix" v="S" />
+	</way>
+		<node changeset="16890740" id="2379389376" lat="33.7122451" lon="-84.2469056" timestamp="2013-07-09T18:39:31Z" uid="1149057" user="DKNOTT" version="1">
+		<tag k="addr:city" v="Decatur" />
+		<tag k="addr:street" v="Stardust Trail" />
+		<tag k="addr:postcode" v="30034-1840" />
+		<tag k="addr:housenumber" v="2574" />
+	</node>
+
+</osm>

@@ -111,6 +111,7 @@ def audit(osmfile):
                     m_ = prefix_zip.search(tag.attrib['v'])
                     if m:
                         zip = m.group(1)
+                        print m.group(0)
                         audit_postcodes(post_codes, zip)
                     elif m_:
                         zip = m_.group(1)
