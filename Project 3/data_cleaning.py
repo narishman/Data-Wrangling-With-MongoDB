@@ -6,12 +6,14 @@ import pprint
 from pymongo import MongoClient
     
 #OSMFILE = "sample.osm"
-OSMFILE = 'C:\\Users\\rmhyman\\Documents\\atlanta_georgia.osm'
+#OSMFILE = 'C:\\Users\\rmhyman\\Documents\\atlanta_georgia.osm'
+OSMFILE = 'C:\\Users\\ransf\\Documents\\atlanta_georgia.osm'
 #OSMFILE = "test_sample.xml"
 html_file = 'ZipCodes.html'
 street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 zipcode_search = re.compile(r'^([0-9]+)-([0-9]+)')
-prefix_zip = re.compile(r'^[GA\s]+([0-9]+)')
+prefix_zip = re.compile(r'^[GA]+\s*([0-9]+)')
+has_zip_search = re.compile(r'[0-9]+')
 problemchars = re.compile(r'[=\+/&<>;\'"\?%#$@\,\. \t\r\n]')
 county_search = re.compile(r'(^[a-zA-z]+),*')
 house_num_search = re.compile(r'^([0-9]+)*')
@@ -133,6 +135,7 @@ def clean_postcode(d,tag):
     
     m = zipcode_search.search(tag.attrib['v'])
     m_ = prefix_zip.search(tag.attrib['v'])
+    M = has_zip_search.search(tag.attrib['v'])
     if m:
         zip = m.group(1)
         ext = m.group(2)
@@ -143,9 +146,11 @@ def clean_postcode(d,tag):
         zip = m_.group(1)
         d['postcode'] = int(zip)
         update_zipInAtanta_field(d, zip)
-    else:
-        d['postcode'] = int(tag.attrib['v'])
-        update_zipInAtanta_field(d, tag.attrib['v']) 
+    elif M:
+        #print tag.attrib['v']
+        zip = M.group()
+        d['postcode'] = int(zip)
+        update_zipInAtanta_field(d, zip) 
 def clean_county(d,tag):
     m = county_search.search(tag.attrib['v'])
     if m:
@@ -181,7 +186,7 @@ def gen_node_refs_array(element):
     return l        
 def clean_file(osmfile):
     osm_file = open(osmfile, 'r')
-    data = []
+    #data = []
     for  event,elem in ET.iterparse(osm_file, events=("start",)):
         if elem.tag == "node" or elem.tag == "way":
             d = {}
@@ -196,15 +201,15 @@ def clean_file(osmfile):
             if elem.tag == 'way':
                 d['node_refs'] = gen_node_refs_array(elem)
             #pprint.pprint(d)
-            data.append(d)
+            #data.append(d)
             
-    return data
+    #return data
 def insert_data(data):
     client = MongoClient("mongodb://localhost:27017")
     db = client.samplemap
     db.sample.insert(data)
     
 if __name__ == '__main__':
-    data = clean_file(OSMFILE)
+    clean_file(OSMFILE)
     #insert_data(data)
     #pprint.pprint(data)
