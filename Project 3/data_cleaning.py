@@ -3,15 +3,30 @@ from collections import defaultdict
 from bs4 import BeautifulSoup
 import re
 import pprint
-
-OSMFILE = "test_sample.xml"
+from pymongo import MongoClient
+    
+#OSMFILE = "sample.osm"
+OSMFILE = 'C:\\Users\\rmhyman\\Documents\\atlanta_georgia.osm'
+#OSMFILE = "test_sample.xml"
 html_file = 'ZipCodes.html'
 street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
 zipcode_search = re.compile(r'^([0-9]+)-([0-9]+)')
 prefix_zip = re.compile(r'^[GA\s]+([0-9]+)')
 problemchars = re.compile(r'[=\+/&<>;\'"\?%#$@\,\. \t\r\n]')
 county_search = re.compile(r'(^[a-zA-z]+),*')
+house_num_search = re.compile(r'^([0-9]+)*')
+def extract_zip_codes(page):
+    data = []
+    with open(page, 'r') as html:
+        soup = BeautifulSoup(html)
+        #print soup.head
+        tables = soup.find_all(href=re.compile(r'http://www.zipcodestogo.com/Atlanta/GA/*'))
+        #print tables
+        for table in tables:
+            data.append(table.text)
 
+    return data
+zcodes = extract_zip_codes(html_file)
 expected = ['Southwest', 'Southeast', 'Northeast','Northwest']
 CREATED = [ "version", "changeset", "timestamp", "user", "uid"]
 direction_mapping = { "S": "South",
@@ -21,7 +36,8 @@ direction_mapping = { "S": "South",
             "NE" : "Northeast",
             "NW" : "Northwest",
             "SE" : "Southeast",
-            "SW" : "Southwest"}
+            "SW" : "Southwest",
+            }
 mapping = {"Dr" : "Drive", 
            "St": "Street",
             "St.": "Street",
@@ -70,27 +86,34 @@ def gen_address_dict(elem):
         elif key_val.find('addr:') != -1:
             k = key_val[5:]
             if k == 'housenumber':
-                d[k] = int(tag.attrib['v'])
+                m = house_num_search.search(tag.attrib['v'])
+                if m and len(m.group(0)) != 0:
+                    #print tag.attrib['v']
+                    d[k] = int(m.group(1))
             else:   
                 d[k] = tag.attrib['v']
+                
     return d
 def handle_non_addr_tags(element,node):
     for tag in element.iter("tag"):
         key_val = tag.attrib['k']
-        val = tag.attrib['v']
         if problemchars.search(key_val) or key_val.find(':') != -1:
             continue
         if key_val.find('addr:') == -1:
-            node[key_val] = val
-    
+            node[key_val] = tag.attrib['v'] 
+                
 def clean_street_type(d,tag):
     street_name = tag.attrib['v']
     m = street_type_re.search(street_name)
     if m:
         street_type = m.group()
         pos = street_name.find(street_type)
-        if is_direction(street_type) or street_type in expected :
-            d['streetSuffix'] = direction_mapping[street_type]
+        in_expected = street_type in expected
+        if is_direction(street_type) or in_expected == True :
+            if in_expected == False:
+                d['streetSuffix'] = direction_mapping[street_type]
+            else:
+                d['streetSuffix'] = street_type
             street_name = street_name[:pos-1]
             m = street_type_re.search(street_name)
             street_type = m.group()
@@ -100,24 +123,14 @@ def clean_street_type(d,tag):
             d['street'] = street_name[:pos] + mapping[street_type] 
         else:
             d['street'] = street_name
-def extract_zip_codes(page):
-    data = []
-    with open(page, 'r') as html:
-        soup = BeautifulSoup(html)
-        #print soup.head
-        tables = soup.find_all(href=re.compile(r'http://www.zipcodestogo.com/Atlanta/GA/*'))
-        #print tables
-        for table in tables:
-            data.append(table.text)
 
-    return data
-def update_zipInAtanta_field(d,zip,zcodes):
+def update_zipInAtanta_field(d,zip):
     if zip in zcodes:
         d['zipInAtlanta'] = 'T'
     else:
         d['zipInAtlanta'] = 'F'
 def clean_postcode(d,tag): 
-    zcodes = extract_zip_codes(html_file)
+    
     m = zipcode_search.search(tag.attrib['v'])
     m_ = prefix_zip.search(tag.attrib['v'])
     if m:
@@ -125,14 +138,14 @@ def clean_postcode(d,tag):
         ext = m.group(2)
         d['postcode'] = int(zip)
         d['postcodeExt'] = int(ext)
-        update_zipInAtanta_field(d, zip, zcodes)
+        update_zipInAtanta_field(d, zip)
     elif m_:
         zip = m_.group(1)
         d['postcode'] = int(zip)
-        update_zipInAtanta_field(d, zip, zcodes)
+        update_zipInAtanta_field(d, zip)
     else:
         d['postcode'] = int(tag.attrib['v'])
-        update_zipInAtanta_field(d, tag.attrib['v'], zcodes) 
+        update_zipInAtanta_field(d, tag.attrib['v']) 
 def clean_county(d,tag):
     m = county_search.search(tag.attrib['v'])
     if m:
@@ -141,6 +154,8 @@ def clean_county(d,tag):
     else:
         d['county'] = tag.attrib['v']
 def address_present(element):
+    if element.tag == 'way':
+        return False
     for tag in element.iter("tag"):
         key_val = tag.attrib['k']
         if key_val.find('addr:') != -1:
@@ -166,17 +181,30 @@ def gen_node_refs_array(element):
     return l        
 def clean_file(osmfile):
     osm_file = open(osmfile, 'r')
-    for event, elem in ET.iterparse(osm_file, events=("start",)):
+    data = []
+    for  event,elem in ET.iterparse(osm_file, events=("start",)):
         if elem.tag == "node" or elem.tag == "way":
             d = {}
-            d['created'] = gen_created_dict(elem)
+            #d['created'] = gen_created_dict(elem)
+            
             if is_pos_present(elem):
                 d['pos'] = gen_pos_array(elem)
             if address_present(elem):
                 d['address'] = gen_address_dict(elem)
             handle_non_addr_tags(elem, d)
+            
             if elem.tag == 'way':
                 d['node_refs'] = gen_node_refs_array(elem)
-            pprint.pprint(d)
+            #pprint.pprint(d)
+            data.append(d)
+            
+    return data
+def insert_data(data):
+    client = MongoClient("mongodb://localhost:27017")
+    db = client.samplemap
+    db.sample.insert(data)
+    
 if __name__ == '__main__':
-    clean_file(OSMFILE)
+    data = clean_file(OSMFILE)
+    #insert_data(data)
+    #pprint.pprint(data)
