@@ -6,8 +6,8 @@ import pprint
 from pymongo import MongoClient
     
 #OSMFILE = "sample.osm"
-#OSMFILE = 'C:\\Users\\rmhyman\\Documents\\atlanta_georgia.osm'
-OSMFILE = 'C:\\Users\\ransf\\Documents\\atlanta_georgia.osm'
+OSMFILE = 'C:\\Users\\rmhyman\\Documents\\atlanta_georgia.osm'
+#OSMFILE = 'C:\\Users\\ransf\\Documents\\atlanta_georgia.osm'
 #OSMFILE = "test_sample.xml"
 html_file = 'ZipCodes.html'
 street_type_re = re.compile(r'\b\S+\.?$', re.IGNORECASE)
@@ -187,7 +187,8 @@ def gen_node_refs_array(element):
 #@profile
 def clean_file(osmfile):
     osm_file = open(osmfile, 'r')
-    #data = []
+    client = MongoClient("mongodb://localhost:27017")
+    db = client.osm
     context = ET.iterparse(osm_file, events=("start",))
     context = iter(context)
     event,root = context.next()
@@ -206,6 +207,7 @@ def clean_file(osmfile):
                 d['node_refs'] = gen_node_refs_array(elem)
             #pprint.pprint(d)
             #data.append(d)
+            db.atlanta.insert(d)
             root.clear()
             
             
