@@ -5,8 +5,8 @@ import re
 import pprint
 from pymongo import MongoClient
     
-#OSMFILE = "sample.osm"
-OSMFILE = 'C:\\Users\\rmhyman\\Documents\\atlanta_georgia.osm'
+OSMFILE = "sample.osm"
+#OSMFILE = 'C:\\Users\\rmhyman\\Documents\\atlanta_georgia.osm'
 #OSMFILE = 'C:\\Users\\ransf\\Documents\\atlanta_georgia.osm'
 #OSMFILE = "test_sample.xml"
 html_file = 'ZipCodes.html'
@@ -212,12 +212,32 @@ def clean_file(osmfile):
             
             
     #return data
+def tiger_present(element):
+    if element.tag == 'way':
+        return False
+    for tag in element.iter("tag"):
+        key_val = tag.attrib['k']
+        if key_val.find('tiger:') != -1:
+            return True
+    return False 
+def audit_tiger_entries(osm_file):
+    context = ET.iterparse(osm_file, events=("start",))
+    context = iter(context)
+    event,root = context.next()
+    count = 0
+    for  event,elem in context:
+        if elem.tag == "node" or elem.tag == "way":
+            if tiger_present(elem):
+                count += 1
+        root.clear()
+    print "Number of entries with tiger data: ", count
 def insert_data(data):
     client = MongoClient("mongodb://localhost:27017")
     db = client.samplemap
     db.sample.insert(data)
     
 if __name__ == '__main__':
-    clean_file(OSMFILE)
+    audit_tiger_entries(OSMFILE)
+    #clean_file(OSMFILE)
     #insert_data(data)
     #pprint.pprint(data)
