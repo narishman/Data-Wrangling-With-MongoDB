@@ -127,12 +127,19 @@ def clean_street_type(d,tag):
             d['street'] = street_name
 
 def update_zipInAtanta_field(d,zip):
+    '''
+    This function checks the golden list of Atlanta zip codes collected from 
+    zipcodestogo.com and sets the field zipInAtlanta appropriately
+    '''
     if zip in zcodes:
         d['zipInAtlanta'] = 'T'
     else:
         d['zipInAtlanta'] = 'F'
 def clean_postcode(d,tag): 
-    
+    '''
+    This function cleans the zipcodes entries.  If the postcode extension is present, 
+    then it places it in the postcodeExt field
+    '''
     m = zipcode_search.search(tag.attrib['v'])
     m_ = prefix_zip.search(tag.attrib['v'])
     M = has_zip_search.search(tag.attrib['v'])
@@ -213,6 +220,10 @@ def clean_file(osmfile):
             
     #return data
 def tiger_present(element):
+    '''
+    Tiger entries were very abundant in this dataset, 
+    so I used this function to audit it. These entries were not cleaned in this project
+    '''
     if element.tag == 'way':
         return False
     for tag in element.iter("tag"):
@@ -221,6 +232,9 @@ def tiger_present(element):
             return True
     return False 
 def audit_tiger_entries(osm_file):
+    '''
+    This function was not used in this project.  Just used to examine the dataset
+    '''
     context = ET.iterparse(osm_file, events=("start",))
     context = iter(context)
     event,root = context.next()
@@ -237,7 +251,4 @@ def insert_data(data):
     db.sample.insert(data)
     
 if __name__ == '__main__':
-    audit_tiger_entries(OSMFILE)
-    #clean_file(OSMFILE)
-    #insert_data(data)
-    #pprint.pprint(data)
+    clean_file(OSMFILE)

@@ -2,9 +2,9 @@
 
 import xml.etree.cElementTree as ET  # Use cElementTree or lxml if too slow
 
-OSM_FILE = "C:\\Users\\ransf\\Documents\\atlanta_georgia.osm"  # Replace this with your osm file
-#OSM_FILE = "C:\\Users\\ransf\\OneDrive\\Documents\\GitHub\\Data-Wrangling-With-MongoDB\\Project 3\\sample.osm"
-SAMPLE_FILE = "C:\\Users\\ransf\\OneDrive\\Documents\\GitHub\\Data-Wrangling-With-MongoDB\\Project 3\\sample.osm"
+#OSM_FILE = "C:\\Users\\ransf\\Documents\\atlanta_georgia.osm"  # Replace this with your osm file
+OSM_FILE = "C:\\Users\\ransf\\OneDrive\\Documents\\GitHub\\Data-Wrangling-With-MongoDB\\Project 3\\sample.osm"
+SAMPLE_FILE = "C:\\Users\\ransf\\OneDrive\\Documents\\GitHub\\Data-Wrangling-With-MongoDB\\Project 3\\sample2.osm"
 
 def get_element(osm_file, tags=('node', 'way', 'relation')):
     """Yield element if it is the right type of tag
@@ -26,7 +26,7 @@ with open(SAMPLE_FILE, 'wb') as output:
 
     # Write every 10th top level element
     for i, element in enumerate(get_element(OSM_FILE)):
-        if i % 50 == 0:
+        if i % 30 == 0:
             output.write(ET.tostring(element, encoding='utf-8'))
 
     output.write('</osm>')

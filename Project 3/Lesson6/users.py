@@ -28,9 +28,9 @@ def process_map(filename):
 
 def test():
 
-    users = process_map('sample.osm')
-    pprint.pprint(len(users))
-    #assert len(users) == 6
+    users = process_map('example.osm')
+    pprint.pprint(users)
+    assert len(users) == 6
 
 
 
