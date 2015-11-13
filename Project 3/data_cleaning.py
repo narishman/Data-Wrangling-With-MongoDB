@@ -17,7 +17,12 @@ has_zip_search = re.compile(r'[0-9]+')
 problemchars = re.compile(r'[=\+/&<>;\'"\?%#$@\,\. \t\r\n]')
 county_search = re.compile(r'(^[a-zA-z]+),*')
 house_num_search = re.compile(r'^([0-9]+)*')
+
 def extract_zip_codes(page):
+    '''
+    The purpose of this function is to perform the screen scraping 
+    task of collecting all of the zip codes that reside in the city of Atlanta
+    '''
     data = []
     with open(page, 'r') as html:
         soup = BeautifulSoup(html)
@@ -28,6 +33,7 @@ def extract_zip_codes(page):
             data.append(table.text)
 
     return data
+#zcodes is the global variable used to store the golden-standard list of zipcodes within the Atlanta city limits
 zcodes = extract_zip_codes(html_file)
 expected = ['Southwest', 'Southeast', 'Northeast','Northwest']
 CREATED = [ "version", "changeset", "timestamp", "user", "uid"]
@@ -59,8 +65,11 @@ mapping = {"Dr" : "Drive",
             "Ave." : "Avenue",
             "Hwy" : "Highway"}
 
+#This function determines whether this tag is a street name or not
 def is_street_name(elem):
     return (elem.attrib['k'] == "addr:street")
+#This function creates the user document which generates key/value pairs
+# for entries within the CREATED global variable
 def gen_created_dict(element):
     d = {}
     for key in CREATED:
@@ -68,13 +77,28 @@ def gen_created_dict(element):
         d[key] = value
     #print d
     return d
+#This function is used to determine whether last word of the street name is a ordinal direction
+#i.e Southwest, Northeast, etc...
 def is_direction(direction):
     return direction in direction_mapping.keys()
+#This function determines whether this tag represents a postal code entry
 def is_postcode(elem):
     return (elem.attrib['k'] == "addr:postcode")
+#This function determines whether this tag represents a county entry
 def is_county(elem):
     return (elem.attrib['k'] == "addr:county")
-
+'''
+This function generates the address document
+The final structure should look like:
+address : {
+    "street" : "Waterstone Way",
+    "housenumber" : 200,
+    "postcode" : 30076,
+    "streetSuffix" : "Southwest"
+    "zipInAtlanta" : "T"
+Note that we check whether the information actually exists.  
+If it does not exist, we do not create an entry
+'''
 def gen_address_dict(elem):
     d = {}
     for tag in elem.iter("tag"):
@@ -96,6 +120,8 @@ def gen_address_dict(elem):
                 d[k] = tag.attrib['v']
                 
     return d
+#This function generates the remainder key/value pairs
+#As long as there are no problematic chars in it's key name.
 def handle_non_addr_tags(element,node):
     for tag in element.iter("tag"):
         key_val = tag.attrib['k']
@@ -103,7 +129,12 @@ def handle_non_addr_tags(element,node):
             continue
         if key_val.find('addr:') == -1:
             node[key_val] = tag.attrib['v'] 
-                
+'''
+This function cleans up the street type by first checking whether an
+street suffix exists.  If it does then it places it within the streetSuffix
+field and then searches for street_type.  Then it cleans the street_type.
+If there is no street_suffix, then it just cleans the street type
+'''                
 def clean_street_type(d,tag):
     street_name = tag.attrib['v']
     m = street_type_re.search(street_name)
@@ -139,6 +170,10 @@ def clean_postcode(d,tag):
     '''
     This function cleans the zipcodes entries.  If the postcode extension is present, 
     then it places it in the postcodeExt field
+    There are 3 regex that are performed:
+    One checks for whether it is in the 9 digit representation
+    Another checks whether state code prefixes the zipcode
+    The last one checks whether a zip codes is actually present as some were not
     '''
     m = zipcode_search.search(tag.attrib['v'])
     m_ = prefix_zip.search(tag.attrib['v'])
@@ -158,6 +193,8 @@ def clean_postcode(d,tag):
         zip = M.group()
         d['postcode'] = int(zip)
         update_zipInAtanta_field(d, zip) 
+#This function removes parses out the actual county name since many of the
+#entries had the state code in them as well
 def clean_county(d,tag):
     m = county_search.search(tag.attrib['v'])
     if m:
@@ -165,6 +202,7 @@ def clean_county(d,tag):
         d['county'] = county
     else:
         d['county'] = tag.attrib['v']
+#This function checks whether address data is present        
 def address_present(element):
     if element.tag == 'way':
         return False
@@ -173,6 +211,7 @@ def address_present(element):
         if key_val.find('addr:') != -1:
             return True
     return False     
+#This function generates a latitude/longitude pair within the "pos" entry
 def gen_pos_array(element):
     pos = []
     val = element.get('lat')
@@ -182,9 +221,12 @@ def gen_pos_array(element):
     val = element.get('lon')
     if val != None:
         pos.append(float(val))
-    return pos 
+    return pos
+#This function checks whether the latitude and longitude values are present 
 def is_pos_present(element):
-    return element.get('lat') != None and element.get('lon') != None  
+    return element.get('lat') != None and element.get('lon') != None
+
+#This function generates a node reference array from the "way" XML documents  
 def gen_node_refs_array(element):
     l = []
     for tag in element.iter("nd"):
